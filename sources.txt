@@ -1,0 +1,10 @@
+src/main/java/org/example/Main.java
+src/main/java/org/example/Student.java
+src/main/java/org/example/Teacher.java
+src/main/java/org/example/UniversityService.java
+src/main/java/org/example/Person.java
+src/main/java/org/example/Department.java
+src/main/java/org/example/Faculty.java
+src/main/java/org/example/University.java
+src/main/java/org/example/StudyForm.java
+src/main/java/org/example/StudentStatus.java
