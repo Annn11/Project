@@ -35,6 +35,7 @@ public class UniversityService {
                 LocalDate.of(2010, 9, 1),
                 1.0,
                 null
+
         );
 
         Faculty fict = new Faculty(
