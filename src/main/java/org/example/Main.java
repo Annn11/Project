@@ -11,8 +11,21 @@ import java.util.UUID;
 public class Main {
     private static final UniversityService service = new UniversityService();
     private static final Scanner scanner = new Scanner(System.in);
+    private static final AuthService authService = new AuthService();
 
     public static void main(String[] args) {
+        //ДЕМОНСТРАЦІЯ АВТОРИЗАЦІЇ
+        System.out.println("=== Вхід у систему ===");
+        System.out.print("Логін (user або manager): ");
+        String login = scanner.nextLine().trim();
+        System.out.print("Пароль (1234 або admin): ");
+        String password = scanner.nextLine().trim();
+
+        if (!authService.login(login, password)) {
+            System.out.println("Невірний логін або пароль. Доступ заборонено!");
+            return;
+        }
+        System.out.println("Успішний вхід! Ваша роль: " + authService.getCurrentRole());
         while (true) {
             printMenu();
 
