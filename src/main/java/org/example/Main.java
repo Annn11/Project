@@ -575,7 +575,7 @@ public class Main {
         return st;
     }
 
-    private static StudentStatus parseStudentStatus(String s) {
+    static StudentStatus parseStudentStatus(String s) {
         return switch (s) {
             case "1" -> StudentStatus.STUDYING;
             case "2" -> StudentStatus.ACADEMIC_LEAVE;
