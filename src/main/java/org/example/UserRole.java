@@ -2,5 +2,6 @@ package org.example;
 
 public enum UserRole {
     USER,
-    MANAGER
+    MANAGER,
+    ADMIN
 }

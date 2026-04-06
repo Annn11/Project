@@ -10,6 +10,13 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.Set;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+
 
 
 public class UniversityService {
@@ -584,6 +591,147 @@ public class UniversityService {
         return students.stream()
                 .collect(Collectors.groupingBy(Student::getGroup, TreeMap::new, Collectors.counting()));
     }
+    public void saveStudentsToCsv(Path path) throws IOException {
+        List<String> lines = new ArrayList<>();
+        lines.add("id;lastName;firstName;middleName;birthDate;email;phone;recordId;course;group;admissionYear;studyForm;status;facultyCode;specialtyCode;departmentCode");
+
+        for (Student s : students) {
+            String facultyCode = "";
+            if (s.getSpecialty() != null && s.getSpecialty().getFaculty() != null) {
+                facultyCode = s.getSpecialty().getFaculty().getCode();
+            }
+
+            String specialtyCode = s.getSpecialty() == null ? "" : s.getSpecialty().getCode();
+            String departmentCode = s.getDepartment() == null ? "" : s.getDepartment().getCode();
+
+            lines.add(String.join(";",
+                    escape(s.getId()),
+                    escape(s.getLastName()),
+                    escape(s.getFirstName()),
+                    escape(s.getMiddleName()),
+                    escape(String.valueOf(s.getBirthDate())),
+                    escape(s.getEmail()),
+                    escape(s.getPhone()),
+                    escape(s.getStudentRecordId()),
+                    escape(String.valueOf(s.getCourse())),
+                    escape(s.getGroup()),
+                    escape(String.valueOf(s.getAdmissionYear())),
+                    escape(s.getStudyForm().name()),
+                    escape(s.getStatus().name()),
+                    escape(facultyCode),
+                    escape(specialtyCode),
+                    escape(departmentCode)
+            ));
+        }
+
+        Files.write(path, lines, StandardCharsets.UTF_8);
+    }
+
+    public void loadStudentsFromCsv(Path path) throws IOException {
+        List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+
+        students.clear();
+        for (Faculty faculty : university.getFaculties()) {
+            for (Department department : faculty.getDepartments()) {
+                department.getPeople().removeIf(p -> p instanceof Student);
+            }
+        }
+
+        for (int i = 1; i < lines.size(); i++) {
+            String line = lines.get(i);
+            if (line.isBlank()) {
+                continue;
+            }
+
+            String[] parts = line.split(";", -1);
+            if (parts.length < 16) {
+                continue;
+            }
+
+            String id = unescape(parts[0]);
+            String lastName = unescape(parts[1]);
+            String firstName = unescape(parts[2]);
+            String middleName = unescape(parts[3]);
+            LocalDate birthDate = LocalDate.parse(unescape(parts[4]));
+            String email = unescape(parts[5]);
+            String phone = unescape(parts[6]);
+            String recordId = unescape(parts[7]);
+            int course = Integer.parseInt(unescape(parts[8]));
+            String group = unescape(parts[9]);
+            int admissionYear = Integer.parseInt(unescape(parts[10]));
+            StudyForm studyForm = StudyForm.valueOf(unescape(parts[11]));
+            StudentStatus status = StudentStatus.valueOf(unescape(parts[12]));
+            String facultyCode = unescape(parts[13]);
+            String specialtyCode = unescape(parts[14]);
+            String departmentCode = unescape(parts[15]);
+
+            Faculty faculty = findFacultyByCode(facultyCode);
+            Specialty specialty = findSpecialtyByCode(faculty, specialtyCode);
+            Department department = findDepartmentByCode(faculty, departmentCode);
+
+            Student student = new Student(
+                    id,
+                    lastName,
+                    firstName,
+                    middleName,
+                    birthDate,
+                    email,
+                    phone,
+                    recordId,
+                    course,
+                    group,
+                    admissionYear,
+                    studyForm,
+                    status,
+                    department,
+                    specialty
+            );
+
+            students.add(student);
+            if (department != null) {
+                department.getPeople().add(student);
+            }
+        }
+    }
+
+    private Faculty findFacultyByCode(String code) {
+        return university.getFaculties().stream()
+                .filter(f -> f.getCode().equalsIgnoreCase(code))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private Specialty findSpecialtyByCode(Faculty faculty, String code) {
+        if (faculty == null) {
+            return null;
+        }
+        return faculty.getSpecialties().stream()
+                .filter(s -> s.getCode().equalsIgnoreCase(code))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private Department findDepartmentByCode(Faculty faculty, String code) {
+        if (faculty == null) {
+            return null;
+        }
+        return faculty.getDepartments().stream()
+                .filter(d -> d.getCode().equalsIgnoreCase(code))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private String escape(String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.replace(";", ",");
+    }
+
+    private String unescape(String s) {
+        return s == null ? "" : s.trim();
+    }
+
 
     public static boolean isBlank(String s) {
         return s == null || s.isBlank();
@@ -613,5 +761,114 @@ public class UniversityService {
         return students.stream()
                 .map(Student::getGroup)
                 .collect(Collectors.toSet());
+    }
+    public void saveStudentsToFile(String fileName) {
+        try (BufferedWriter writer = Files.newBufferedWriter(Path.of(fileName))) {
+            for (Student s : students) {
+                String specialtyCode = s.getSpecialty() != null ? s.getSpecialty().getCode() : "";
+                String departmentCode = s.getDepartment() != null ? s.getDepartment().getCode() : "";
+
+                writer.write(
+                        s.getId() + ";" +
+                                s.getLastName() + ";" +
+                                s.getFirstName() + ";" +
+                                s.getMiddleName() + ";" +
+                                s.getBirthDate() + ";" +
+                                s.getEmail() + ";" +
+                                s.getPhone() + ";" +
+                                s.getStudentRecordId() + ";" +
+                                s.getCourse() + ";" +
+                                s.getGroup() + ";" +
+                                s.getAdmissionYear() + ";" +
+                                s.getStudyForm().name() + ";" +
+                                s.getStatus().name() + ";" +
+                                departmentCode + ";" +
+                                specialtyCode
+                );
+                writer.newLine();
+            }
+            System.out.println("Дані збережено у файл: " + fileName);
+        } catch (IOException e) {
+            System.out.println("Помилка збереження: " + e.getMessage());
+        }
+    }
+
+    public void loadStudentsFromFile(String fileName) {
+        students.clear();
+
+        try (BufferedReader reader = Files.newBufferedReader(Path.of(fileName))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(";");
+                if (parts.length < 15) {
+                    continue;
+                }
+
+                String id = parts[0];
+                String lastName = parts[1];
+                String firstName = parts[2];
+                String middleName = parts[3];
+                LocalDate birthDate = LocalDate.parse(parts[4]);
+                String email = parts[5];
+                String phone = parts[6];
+                String recordId = parts[7];
+                int course = Integer.parseInt(parts[8]);
+                String group = parts[9];
+                int admissionYear = Integer.parseInt(parts[10]);
+                StudyForm studyForm = StudyForm.valueOf(parts[11]);
+                StudentStatus status = StudentStatus.valueOf(parts[12]);
+                String departmentCode = parts[13];
+                String specialtyCode = parts[14];
+
+                Department dept = findDepartmentByCode(departmentCode);
+                Specialty specialty = findSpecialtyByCode(specialtyCode);
+
+                Student student = new Student(
+                        id,
+                        lastName,
+                        firstName,
+                        middleName,
+                        birthDate,
+                        email,
+                        phone,
+                        recordId,
+                        course,
+                        group,
+                        admissionYear,
+                        studyForm,
+                        status,
+                        dept,
+                        specialty
+                );
+
+                students.add(student);
+            }
+
+            System.out.println("Дані завантажено з файлу: " + fileName);
+        } catch (IOException e) {
+            System.out.println("Помилка завантаження: " + e.getMessage());
+        }
+    }
+
+    private Department findDepartmentByCode(String code) {
+        for (Faculty faculty : university.getFaculties()) {
+            for (Department dept : faculty.getDepartments()) {
+                if (dept.getCode().equals(code)) {
+                    return dept;
+                }
+            }
+        }
+        return null;
+    }
+
+    private Specialty findSpecialtyByCode(String code) {
+        for (Faculty faculty : university.getFaculties()) {
+            for (Specialty specialty : faculty.getSpecialties()) {
+                if (specialty.getCode().equals(code)) {
+                    return specialty;
+                }
+            }
+        }
+        return null;
     }
 }
