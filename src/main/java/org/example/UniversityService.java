@@ -17,8 +17,6 @@ import java.nio.file.Path;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 
-
-
 public class UniversityService {
     private final University university =
             new University(
@@ -255,10 +253,47 @@ public class UniversityService {
                 "Корпус 3, каб. 312"
         );
 
+        Department csDept = new Department(
+                "CS",
+                "Кафедра комп'ютерних наук",
+                itFaculty,
+                headSe,
+                "Корпус 3, каб. 320"
+        );
+
+        Department cyberDept = new Department(
+                "CYB",
+                "Кафедра кібербезпеки та захисту інформації",
+                itFaculty,
+                headSe,
+                "Корпус 3, каб. 330"
+        );
+
+        Department amDept = new Department(
+                "AM",
+                "Кафедра прикладної математики",
+                itFaculty,
+                headSe,
+                "Корпус 3, каб. 340"
+        );
+
+        Department autoDept = new Department(
+                "AUTO",
+                "Кафедра автоматизації та робототехніки",
+                itFaculty,
+                headSe,
+                "Корпус 3, каб. 350"
+        );
+
         deanIT.setDepartment(seDept);
         headSe.setDepartment(seDept);
 
         itFaculty.addDepartment(seDept);
+        itFaculty.addDepartment(csDept);
+        itFaculty.addDepartment(cyberDept);
+        itFaculty.addDepartment(amDept);
+        itFaculty.addDepartment(autoDept);
+
         itFaculty.addSpecialty(new Specialty("F1", "Прикладна математика", itFaculty));
         itFaculty.addSpecialty(new Specialty("F2", "Інженерія програмного забезпечення", itFaculty));
         itFaculty.addSpecialty(new Specialty("F3", "Комп’ютерні науки", itFaculty));
@@ -479,6 +514,18 @@ public class UniversityService {
         seDept.getPeople().add(deanIT);
         seDept.getPeople().add(headSe);
 
+        csDept.getPeople().add(deanIT);
+        csDept.getPeople().add(headSe);
+
+        cyberDept.getPeople().add(deanIT);
+        cyberDept.getPeople().add(headSe);
+
+        amDept.getPeople().add(deanIT);
+        amDept.getPeople().add(headSe);
+
+        autoDept.getPeople().add(deanIT);
+        autoDept.getPeople().add(headSe);
+
         lawDept.getPeople().add(deanLaw);
         lawDept.getPeople().add(headLaw);
 
@@ -591,6 +638,7 @@ public class UniversityService {
         return students.stream()
                 .collect(Collectors.groupingBy(Student::getGroup, TreeMap::new, Collectors.counting()));
     }
+
     public void saveStudentsToCsv(Path path) throws IOException {
         List<String> lines = new ArrayList<>();
         lines.add("id;lastName;firstName;middleName;birthDate;email;phone;recordId;course;group;admissionYear;studyForm;status;facultyCode;specialtyCode;departmentCode");
@@ -732,7 +780,6 @@ public class UniversityService {
         return s == null ? "" : s.trim();
     }
 
-
     public static boolean isBlank(String s) {
         return s == null || s.isBlank();
     }
@@ -757,11 +804,13 @@ public class UniversityService {
     private static String safeLower(String s) {
         return s == null ? "" : s.toLowerCase();
     }
+
     public Set<String> getAllGroupsUnique() {
         return students.stream()
                 .map(Student::getGroup)
                 .collect(Collectors.toSet());
     }
+
     public void saveStudentsToFile(String fileName) {
         try (BufferedWriter writer = Files.newBufferedWriter(Path.of(fileName))) {
             for (Student s : students) {
@@ -842,6 +891,9 @@ public class UniversityService {
                 );
 
                 students.add(student);
+                if (dept != null) {
+                    dept.getPeople().add(student);
+                }
             }
 
             System.out.println("Дані завантажено з файлу: " + fileName);

@@ -768,6 +768,7 @@ public class Main {
 
         if (!service.getAllStudents().isEmpty()) {
             System.out.println("Демо-дані вже додані.");
+            printStudents(service.getAllStudents());
             return;
         }
 
@@ -778,15 +779,52 @@ public class Main {
             return;
         }
 
-        Faculty faculty = faculties.get(0);
+        Faculty itFaculty = null;
+        for (Faculty f : faculties) {
+            if ("IT".equalsIgnoreCase(f.getCode()) || "Факультет інформатики".equalsIgnoreCase(f.getName())) {
+                itFaculty = f;
+                break;
+            }
+        }
 
-        if (faculty.getSpecialties().isEmpty() || faculty.getDepartments().isEmpty()) {
-            System.out.println("Немає спеціальностей або кафедр.");
+        if (itFaculty == null) {
+            System.out.println("Не знайдено факультет інформатики.");
             return;
         }
 
-        Specialty specialty = faculty.getSpecialties().get(0);
-        Department dept = faculty.getDepartments().get(0);
+        Department seDept = null;
+        Department csDept = null;
+        Department cyberDept = null;
+
+        for (Department d : itFaculty.getDepartments()) {
+            if ("SE".equalsIgnoreCase(d.getCode())) {
+                seDept = d;
+            } else if ("CS".equalsIgnoreCase(d.getCode())) {
+                csDept = d;
+            } else if ("CYB".equalsIgnoreCase(d.getCode())) {
+                cyberDept = d;
+            }
+        }
+
+        Specialty ipzSpec = null;
+        Specialty csSpec = null;
+        Specialty cyberSpec = null;
+
+        for (Specialty s : itFaculty.getSpecialties()) {
+            if ("F2".equalsIgnoreCase(s.getCode())) {
+                ipzSpec = s; // Інженерія програмного забезпечення
+            } else if ("F3".equalsIgnoreCase(s.getCode())) {
+                csSpec = s; // Комп’ютерні науки
+            } else if ("F5".equalsIgnoreCase(s.getCode())) {
+                cyberSpec = s; // Кібербезпека
+            }
+        }
+
+        if (seDept == null || csDept == null || cyberDept == null ||
+                ipzSpec == null || csSpec == null || cyberSpec == null) {
+            System.out.println("Не вдалося знайти потрібні кафедри або спеціальності для демо.");
+            return;
+        }
 
         service.addStudent(new Student(
                 UUID.randomUUID().toString(),
@@ -798,12 +836,12 @@ public class Main {
                 "0991234567",
                 "ST123",
                 2,
-                "IPZ-21",
+                "ІПЗ-2",
                 2023,
                 StudyForm.BUDGET,
                 StudentStatus.STUDYING,
-                dept,
-                specialty
+                seDept,
+                ipzSpec
         ));
 
         service.addStudent(new Student(
@@ -816,12 +854,12 @@ public class Main {
                 "0987654321",
                 "ST124",
                 3,
-                "IPZ-31",
+                "КН-3",
                 2022,
                 StudyForm.CONTRACT,
                 StudentStatus.STUDYING,
-                dept,
-                specialty
+                csDept,
+                csSpec
         ));
 
         service.addStudent(new Student(
@@ -834,15 +872,16 @@ public class Main {
                 "0937778899",
                 "ST125",
                 4,
-                "SE-41",
+                "КБ-4",
                 2021,
                 StudyForm.BUDGET,
                 StudentStatus.EXPELLED,
-                dept,
-                specialty
+                cyberDept,
+                cyberSpec
         ));
 
         System.out.println("✔ Демо-дані додані!");
+        printStudents(service.getAllStudents());
     }
 
     private static boolean requirePermission(Permission permission) {
