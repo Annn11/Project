@@ -1,23 +1,21 @@
 package org.example;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.Set;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-
-
 
 public class UniversityService {
     private final University university =
@@ -73,6 +71,38 @@ public class UniversityService {
                 null
         );
 
+        Teacher headPhilology = new Teacher(
+                UUID.randomUUID().toString(),
+                "Левченко",
+                "Ірина",
+                "Михайлівна",
+                LocalDate.of(1983, 7, 8),
+                "head.philology@ukma.edu.ua",
+                "+380500000022",
+                "завідувач кафедри",
+                "д.філол.н.",
+                "професор",
+                LocalDate.of(2011, 9, 1),
+                1.0,
+                null
+        );
+
+        Teacher headPhilosophy = new Teacher(
+                UUID.randomUUID().toString(),
+                "Савченко",
+                "Юрій",
+                "Олександрович",
+                LocalDate.of(1982, 3, 4),
+                "head.philosophy@ukma.edu.ua",
+                "+380500000023",
+                "завідувач кафедри",
+                "к.філос.н.",
+                "доцент",
+                LocalDate.of(2012, 9, 1),
+                1.0,
+                null
+        );
+
         Department historyDept = new Department(
                 "HIS",
                 "Кафедра історії",
@@ -81,10 +111,31 @@ public class UniversityService {
                 "Корпус 1, каб. 101"
         );
 
+        Department philologyDept = new Department(
+                "PHILOL",
+                "Кафедра філології",
+                humanitiesFaculty,
+                headPhilology,
+                "Корпус 1, каб. 102"
+        );
+
+        Department philosophyDept = new Department(
+                "PHILO",
+                "Кафедра філософії та культурології",
+                humanitiesFaculty,
+                headPhilosophy,
+                "Корпус 1, каб. 103"
+        );
+
         deanHumanities.setDepartment(historyDept);
         headHistory.setDepartment(historyDept);
+        headPhilology.setDepartment(philologyDept);
+        headPhilosophy.setDepartment(philosophyDept);
 
         humanitiesFaculty.addDepartment(historyDept);
+        humanitiesFaculty.addDepartment(philologyDept);
+        humanitiesFaculty.addDepartment(philosophyDept);
+
         humanitiesFaculty.addSpecialty(new Specialty("B9", "Історія", humanitiesFaculty));
         humanitiesFaculty.addSpecialty(new Specialty("B10", "Філософія", humanitiesFaculty));
         humanitiesFaculty.addSpecialty(new Specialty("B11", "Філологія", humanitiesFaculty));
@@ -115,13 +166,13 @@ public class UniversityService {
                 "econ@ukma.edu.ua"
         );
 
-        Teacher headMarketing = new Teacher(
+        Teacher headEconomy = new Teacher(
                 UUID.randomUUID().toString(),
                 "Сидоренко",
                 "Марія",
                 "Олександрівна",
                 LocalDate.of(1982, 4, 14),
-                "head.marketing@ukma.edu.ua",
+                "head.economy@ukma.edu.ua",
                 "+380500000012",
                 "завідувач кафедри",
                 "к.е.н.",
@@ -131,18 +182,71 @@ public class UniversityService {
                 null
         );
 
-        Department marketingDept = new Department(
-                "MKT",
-                "Кафедра маркетингу та менеджменту",
+        Teacher headFinance = new Teacher(
+                UUID.randomUUID().toString(),
+                "Клименко",
+                "Ігор",
+                "Васильович",
+                LocalDate.of(1981, 10, 5),
+                "head.finance@ukma.edu.ua",
+                "+380500000020",
+                "завідувач кафедри",
+                "к.е.н.",
+                "доцент",
+                LocalDate.of(2012, 9, 1),
+                1.0,
+                null
+        );
+
+        Teacher headManagement = new Teacher(
+                UUID.randomUUID().toString(),
+                "Тимошенко",
+                "Людмила",
+                "Павлівна",
+                LocalDate.of(1983, 1, 17),
+                "head.management@ukma.edu.ua",
+                "+380500000021",
+                "завідувач кафедри",
+                "д.е.н.",
+                "професор",
+                LocalDate.of(2010, 9, 1),
+                1.0,
+                null
+        );
+
+        Department economyDept = new Department(
+                "ECON-D",
+                "Кафедра економіки",
                 economicsFaculty,
-                headMarketing,
+                headEconomy,
                 "Корпус 2, каб. 210"
         );
 
-        deanEconomics.setDepartment(marketingDept);
-        headMarketing.setDepartment(marketingDept);
+        Department financeDept = new Department(
+                "FIN",
+                "Кафедра фінансів і банківської справи",
+                economicsFaculty,
+                headFinance,
+                "Корпус 2, каб. 211"
+        );
 
-        economicsFaculty.addDepartment(marketingDept);
+        Department managementDept = new Department(
+                "MNG",
+                "Кафедра менеджменту та маркетингу",
+                economicsFaculty,
+                headManagement,
+                "Корпус 2, каб. 212"
+        );
+
+        deanEconomics.setDepartment(economyDept);
+        headEconomy.setDepartment(economyDept);
+        headFinance.setDepartment(financeDept);
+        headManagement.setDepartment(managementDept);
+
+        economicsFaculty.addDepartment(economyDept);
+        economicsFaculty.addDepartment(financeDept);
+        economicsFaculty.addDepartment(managementDept);
+
         economicsFaculty.addSpecialty(new Specialty("C1", "Економіка", economicsFaculty));
         economicsFaculty.addSpecialty(new Specialty("D2", "Фінанси, банківська справа, страхування та фондовий ринок", economicsFaculty));
         economicsFaculty.addSpecialty(new Specialty("D3", "Менеджмент", economicsFaculty));
@@ -191,7 +295,7 @@ public class UniversityService {
 
         Department politicsDept = new Department(
                 "POL",
-                "Кафедра політичних наук",
+                "Кафедра соціальних та політичних наук",
                 socialFaculty,
                 headPolitics,
                 "Корпус 4, каб. 305"
@@ -247,6 +351,38 @@ public class UniversityService {
                 null
         );
 
+        Teacher headCs = new Teacher(
+                UUID.randomUUID().toString(),
+                "Кравченко",
+                "Олена",
+                "Вікторівна",
+                LocalDate.of(1982, 9, 11),
+                "head.cs@ukma.edu.ua",
+                "+380500000018",
+                "завідувач кафедри",
+                "к.т.н.",
+                "доцент",
+                LocalDate.of(2011, 9, 1),
+                1.0,
+                null
+        );
+
+        Teacher headCyber = new Teacher(
+                UUID.randomUUID().toString(),
+                "Мороз",
+                "Андрій",
+                "Сергійович",
+                LocalDate.of(1984, 6, 7),
+                "head.cyber@ukma.edu.ua",
+                "+380500000019",
+                "завідувач кафедри",
+                "к.т.н.",
+                "доцент",
+                LocalDate.of(2013, 9, 1),
+                1.0,
+                null
+        );
+
         Department seDept = new Department(
                 "SE",
                 "Кафедра інженерії програмного забезпечення",
@@ -255,10 +391,31 @@ public class UniversityService {
                 "Корпус 3, каб. 312"
         );
 
+        Department csDept = new Department(
+                "CS",
+                "Кафедра комп’ютерних наук",
+                itFaculty,
+                headCs,
+                "Корпус 3, каб. 313"
+        );
+
+        Department cyberDept = new Department(
+                "CYB",
+                "Кафедра кібербезпеки та захисту інформації",
+                itFaculty,
+                headCyber,
+                "Корпус 3, каб. 314"
+        );
+
         deanIT.setDepartment(seDept);
         headSe.setDepartment(seDept);
+        headCs.setDepartment(csDept);
+        headCyber.setDepartment(cyberDept);
 
         itFaculty.addDepartment(seDept);
+        itFaculty.addDepartment(csDept);
+        itFaculty.addDepartment(cyberDept);
+
         itFaculty.addSpecialty(new Specialty("F1", "Прикладна математика", itFaculty));
         itFaculty.addSpecialty(new Specialty("F2", "Інженерія програмного забезпечення", itFaculty));
         itFaculty.addSpecialty(new Specialty("F3", "Комп’ютерні науки", itFaculty));
@@ -364,7 +521,7 @@ public class UniversityService {
 
         Department biologyDept = new Department(
                 "BIO",
-                "Кафедра біології та екології",
+                "Кафедра природничих наук",
                 naturalFaculty,
                 headBiology,
                 "Корпус 6, каб. 221"
@@ -421,7 +578,7 @@ public class UniversityService {
 
         Department psychologyDept = new Department(
                 "PSY",
-                "Кафедра психології та соціальної роботи",
+                "Кафедра психології, соціальної роботи та громадського здоров’я",
                 healthFaculty,
                 headPsychology,
                 "Корпус 7, каб. 120"
@@ -447,15 +604,21 @@ public class UniversityService {
         // -------------------- ВИКЛАДАЧІ --------------------
         teachers.add(deanHumanities);
         teachers.add(headHistory);
+        teachers.add(headPhilology);
+        teachers.add(headPhilosophy);
 
         teachers.add(deanEconomics);
-        teachers.add(headMarketing);
+        teachers.add(headEconomy);
+        teachers.add(headFinance);
+        teachers.add(headManagement);
 
         teachers.add(deanSocial);
         teachers.add(headPolitics);
 
         teachers.add(deanIT);
         teachers.add(headSe);
+        teachers.add(headCs);
+        teachers.add(headCyber);
 
         teachers.add(deanLaw);
         teachers.add(headLaw);
@@ -470,14 +633,21 @@ public class UniversityService {
         historyDept.getPeople().add(deanHumanities);
         historyDept.getPeople().add(headHistory);
 
-        marketingDept.getPeople().add(deanEconomics);
-        marketingDept.getPeople().add(headMarketing);
+        philologyDept.getPeople().add(headPhilology);
+        philosophyDept.getPeople().add(headPhilosophy);
+
+        economyDept.getPeople().add(deanEconomics);
+        economyDept.getPeople().add(headEconomy);
+        financeDept.getPeople().add(headFinance);
+        managementDept.getPeople().add(headManagement);
 
         politicsDept.getPeople().add(deanSocial);
         politicsDept.getPeople().add(headPolitics);
 
         seDept.getPeople().add(deanIT);
         seDept.getPeople().add(headSe);
+        csDept.getPeople().add(headCs);
+        cyberDept.getPeople().add(headCyber);
 
         lawDept.getPeople().add(deanLaw);
         lawDept.getPeople().add(headLaw);
@@ -591,6 +761,16 @@ public class UniversityService {
         return students.stream()
                 .collect(Collectors.groupingBy(Student::getGroup, TreeMap::new, Collectors.counting()));
     }
+
+    public List<StudentReportRow> reportGroupRows() {
+        return students.stream()
+                .collect(Collectors.groupingBy(Student::getGroup, TreeMap::new, Collectors.counting()))
+                .entrySet()
+                .stream()
+                .map(e -> new StudentReportRow(e.getKey(), e.getValue()))
+                .toList();
+    }
+
     public void saveStudentsToCsv(Path path) throws IOException {
         List<String> lines = new ArrayList<>();
         lines.add("id;lastName;firstName;middleName;birthDate;email;phone;recordId;course;group;admissionYear;studyForm;status;facultyCode;specialtyCode;departmentCode");
@@ -732,7 +912,6 @@ public class UniversityService {
         return s == null ? "" : s.trim();
     }
 
-
     public static boolean isBlank(String s) {
         return s == null || s.isBlank();
     }
@@ -757,11 +936,13 @@ public class UniversityService {
     private static String safeLower(String s) {
         return s == null ? "" : s.toLowerCase();
     }
+
     public Set<String> getAllGroupsUnique() {
         return students.stream()
                 .map(Student::getGroup)
                 .collect(Collectors.toSet());
     }
+
     public void saveStudentsToFile(String fileName) {
         try (BufferedWriter writer = Files.newBufferedWriter(Path.of(fileName))) {
             for (Student s : students) {

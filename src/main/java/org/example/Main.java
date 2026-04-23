@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.UUID;
 
 public class Main {
@@ -13,104 +14,109 @@ public class Main {
     private static final AuthService auth = new AuthService();
     private static final UniversityService service = new UniversityService();
     private static final Scanner scanner = new Scanner(System.in);
-    private static final AuthService authService = new AuthService();
 
     public static void main(String[] args) {
-        //ДЕМОНСТРАЦІЯ АВТОРИЗАЦІЇ
-        System.out.println("=== Вхід у систему ===");
-        System.out.print("Логін (user або manager): ");
-        String login = scanner.nextLine().trim();
-        System.out.print("Пароль (1234 або admin): ");
-        String password = scanner.nextLine().trim();
-
-        if (!authService.login(login, password)) {
-            System.out.println("Невірний логін або пароль. Доступ заборонено!");
-            return;
-        }
-        System.out.println("Успішний вхід! Ваша роль: " + authService.getCurrentRole());
-
         loginMenu();
         printMenu();
 
         while (true) {
-            System.out.print("Вибір: ");
+            String choice = scanner.nextLine().trim();
 
-            switch (scanner.nextLine().trim()) {
+            switch (choice) {
                 case "1":
                     if (requirePermission(Permission.EDIT_STUDENTS)) {
                         addStudentMenu();
+                        pause();
                     }
                     break;
                 case "2":
                     if (requirePermission(Permission.VIEW_STUDENTS)) {
-                        printStudents(service.getAllStudents());
+                        printStudents(service.getAllStudents()
+                                .stream()
+                                .sorted(java.util.Comparator.comparing(Student::getCourse)
+                                        .thenComparing(Student::getLastName))
+                                .toList());
+                        pause();
                     }
                     break;
                 case "3":
                     if (requirePermission(Permission.EDIT_STUDENTS)) {
                         updateStudentMenu();
+                        pause();
                     }
                     break;
                 case "4":
                     if (requirePermission(Permission.DELETE_STUDENTS)) {
                         deleteStudentMenu();
+                        pause();
                     }
                     break;
                 case "5":
                     if (requirePermission(Permission.VIEW_STUDENTS)) {
                         searchByNameMenu();
+                        pause();
                     }
                     break;
                 case "6":
                     if (requirePermission(Permission.VIEW_STUDENTS)) {
                         searchByCourseMenu();
+                        pause();
                     }
                     break;
                 case "7":
                     if (requirePermission(Permission.VIEW_STUDENTS)) {
                         searchByGroupMenu();
+                        pause();
                     }
                     break;
                 case "8":
                     if (requirePermission(Permission.VIEW_REPORTS)) {
                         reportsMenu();
+                        pause();
                     }
                     break;
                 case "9":
                     showUniversityStructure();
+                    pause();
                     break;
                 case "10":
                     if (requirePermission(Permission.MANAGE_USERS)) {
                         manageUsersMenu();
+                        pause();
                     }
                     break;
                 case "11":
                     auth.logout();
                     loginMenu();
-                    printMenu();
                     break;
                 case "12":
                     if (requirePermission(Permission.SAVE_LOAD)) {
                         service.saveStudentsToFile("src/students.txt");
+                        pause();
                     }
                     break;
                 case "13":
                     if (requirePermission(Permission.SAVE_LOAD)) {
                         service.loadStudentsFromFile("src/students.txt");
+                        pause();
                     }
                     break;
                 case "99":
                     demoData();
+                    pause();
                     break;
                 case "m":
                     printMenu();
-                    break;
+                    continue;
                 case "0":
                     System.out.println("До побачення!");
                     return;
                 default:
                     System.out.println("Помилка: невірний пункт меню.");
+                    pause();
             }
+
+            printMenu();
         }
     }
 
@@ -161,6 +167,7 @@ public class Main {
         System.out.println("12. Зберегти дані");
         System.out.println("13. Завантажити дані");
         System.out.println("99. Демо (швидке заповнення)");
+        System.out.println("m. Показати меню ще раз");
         System.out.println("0. Вихід");
         System.out.print("Вибір: ");
     }
@@ -182,8 +189,16 @@ public class Main {
         StudentStatus status = readStudentStatus("Статус (1=навчається, 2=академвідпустка, 3=відрахований): ");
 
         Faculty faculty = readFaculty();
+        if (faculty == null) return;
+
         Specialty specialty = readSpecialty(faculty);
-        Department dept = getDefaultDepartmentByFaculty(faculty);
+        if (specialty == null) return;
+
+        Department dept = getDepartmentBySpecialty(faculty, specialty);
+        if (dept == null) {
+            System.out.println("Помилка: для цієї спеціальності не знайдено кафедру.");
+            return;
+        }
 
         String id = UUID.randomUUID().toString();
 
@@ -340,9 +355,9 @@ public class Main {
             Specialty specialty = readSpecialty(faculty);
             if (specialty == null) return;
 
-            Department dept = getDefaultDepartmentByFaculty(faculty);
+            Department dept = getDepartmentBySpecialty(faculty, specialty);
             if (dept == null) {
-                System.out.println("Помилка: для цього факультету не знайдено кафедру.");
+                System.out.println("Помилка: для цієї спеціальності не знайдено кафедру.");
                 return;
             }
 
@@ -376,17 +391,13 @@ public class Main {
     }
 
     private static void searchByCourseMenu() {
-        Integer course = readCourse("Введіть курс 1-6 для пошуку: ");
-        if (course != null) {
-            printStudents(service.getStudentsByCourse(course));
-        }
+        int course = readCourse("Введіть курс 1-6 для пошуку: ");
+        printStudents(service.getStudentsByCourse(course));
     }
 
     private static void searchByGroupMenu() {
         String group = readGroup("Введіть групу для пошуку: ");
-        if (group != null) {
-            printStudents(service.getStudentsByGroup(group));
-        }
+        printStudents(service.getStudentsByGroup(group));
     }
 
     private static void reportsMenu() {
@@ -410,33 +421,21 @@ public class Main {
                     System.out.println("Група " + group + ": " + cnt));
         }
 
-        System.out.println("\n3) Кількість студентів по факультетах:");
-        List<Student> students = service.getAllStudents();
-        if (students.isEmpty()) {
+        System.out.println("\n3) Звіт через record:");
+        List<StudentReportRow> rows = service.reportGroupRows();
+        if (rows.isEmpty()) {
             System.out.println("(нема даних)");
         } else {
-            students.stream()
-                    .filter(s -> s.getSpecialty() != null && s.getSpecialty().getFaculty() != null)
-                    .collect(java.util.stream.Collectors.groupingBy(
-                            s -> s.getSpecialty().getFaculty().getName(),
-                            java.util.TreeMap::new,
-                            java.util.stream.Collectors.counting()
-                    ))
-                    .forEach((faculty, cnt) -> System.out.println(faculty + ": " + cnt));
+            rows.forEach(row ->
+                    System.out.println("Група: " + row.name() + " | Кількість: " + row.count()));
         }
 
-        System.out.println("\n4) Кількість студентів по спеціальностях:");
-        if (students.isEmpty()) {
+        System.out.println("\n4) Унікальні групи:");
+        Set<String> groups = service.getAllGroupsUnique();
+        if (groups.isEmpty()) {
             System.out.println("(нема даних)");
         } else {
-            students.stream()
-                    .filter(s -> s.getSpecialty() != null)
-                    .collect(java.util.stream.Collectors.groupingBy(
-                            s -> s.getSpecialty().getName(),
-                            java.util.TreeMap::new,
-                            java.util.stream.Collectors.counting()
-                    ))
-                    .forEach((specialty, cnt) -> System.out.println(specialty + ": " + cnt));
+            groups.forEach(group -> System.out.println("- " + group));
         }
     }
 
@@ -493,7 +492,6 @@ public class Main {
                         System.out.println(u);
                     }
                     break;
-
                 case "2":
                     String login = readNonBlank("Логін: ");
                     String password = readNonBlank("Пароль: ");
@@ -509,7 +507,6 @@ public class Main {
                         System.out.println("Не вдалося додати користувача.");
                     }
                     break;
-
                 case "3":
                     String loginToDelete = readNonBlank("Логін користувача для видалення: ");
                     if (auth.removeUser(loginToDelete)) {
@@ -518,7 +515,6 @@ public class Main {
                         System.out.println("Не вдалося видалити користувача.");
                     }
                     break;
-
                 case "4":
                     String loginToChange = readNonBlank("Логін користувача: ");
                     UserRole newRole = readUserRole();
@@ -533,10 +529,8 @@ public class Main {
                         System.out.println("Не вдалося змінити роль.");
                     }
                     break;
-
                 case "0":
                     return;
-
                 default:
                     System.out.println("Помилка: невірний пункт меню.");
             }
@@ -633,10 +627,29 @@ public class Main {
         }
     }
 
-    private static Department getDefaultDepartmentByFaculty(Faculty faculty) {
-        if (faculty == null || faculty.getDepartments().isEmpty()) {
+    private static Department getDepartmentBySpecialty(Faculty faculty, Specialty specialty) {
+        if (faculty == null || specialty == null || faculty.getDepartments().isEmpty()) {
             return null;
         }
+
+        String code = specialty.getCode();
+
+        for (Department dept : faculty.getDepartments()) {
+            if (code.equalsIgnoreCase("F2") && dept.getCode().equalsIgnoreCase("SE")) return dept;
+            if (code.equalsIgnoreCase("F3") && dept.getCode().equalsIgnoreCase("CS")) return dept;
+            if (code.equalsIgnoreCase("F5") && dept.getCode().equalsIgnoreCase("CYB")) return dept;
+
+            if (code.equalsIgnoreCase("C1") && dept.getCode().equalsIgnoreCase("ECON-D")) return dept;
+            if (code.equalsIgnoreCase("D2") && dept.getCode().equalsIgnoreCase("FIN")) return dept;
+            if ((code.equalsIgnoreCase("D3") || code.equalsIgnoreCase("D5")) && dept.getCode().equalsIgnoreCase("MNG")) return dept;
+
+            if (code.equalsIgnoreCase("B9") && dept.getCode().equalsIgnoreCase("HIS")) return dept;
+            if (code.equalsIgnoreCase("B11") && dept.getCode().equalsIgnoreCase("PHILOL")) return dept;
+            if ((code.equalsIgnoreCase("B10") || code.equalsIgnoreCase("B12")) && dept.getCode().equalsIgnoreCase("PHILO")) return dept;
+
+            if ((code.equalsIgnoreCase("D4") || code.equalsIgnoreCase("D8")) && dept.getCode().equalsIgnoreCase("LAW-D")) return dept;
+        }
+
         return faculty.getDepartments().get(0);
     }
 
@@ -765,28 +778,42 @@ public class Main {
     }
 
     private static void demoData() {
-
         if (!service.getAllStudents().isEmpty()) {
             System.out.println("Демо-дані вже додані.");
             return;
         }
 
-        List<Faculty> faculties = service.getUniversity().getFaculties();
+        Faculty it = service.getUniversity().getFaculties().stream()
+                .filter(f -> f.getCode().equalsIgnoreCase("IT"))
+                .findFirst().orElse(null);
 
-        if (faculties.isEmpty()) {
-            System.out.println("Немає факультетів для демо.");
+        Faculty econ = service.getUniversity().getFaculties().stream()
+                .filter(f -> f.getCode().equalsIgnoreCase("ECON"))
+                .findFirst().orElse(null);
+
+        Faculty hum = service.getUniversity().getFaculties().stream()
+                .filter(f -> f.getCode().equalsIgnoreCase("HUM"))
+                .findFirst().orElse(null);
+
+        Faculty law = service.getUniversity().getFaculties().stream()
+                .filter(f -> f.getCode().equalsIgnoreCase("LAW"))
+                .findFirst().orElse(null);
+
+        if (it == null || econ == null || hum == null || law == null) {
+            System.out.println("Не знайдено потрібні факультети.");
             return;
         }
 
-        Faculty faculty = faculties.get(0);
+        Specialty se = it.getSpecialties().stream().filter(s -> s.getCode().equalsIgnoreCase("F2")).findFirst().orElse(null);
+        Specialty cs = it.getSpecialties().stream().filter(s -> s.getCode().equalsIgnoreCase("F3")).findFirst().orElse(null);
+        Specialty marketing = econ.getSpecialties().stream().filter(s -> s.getCode().equalsIgnoreCase("D5")).findFirst().orElse(null);
+        Specialty history = hum.getSpecialties().stream().filter(s -> s.getCode().equalsIgnoreCase("B9")).findFirst().orElse(null);
+        Specialty lawSpec = law.getSpecialties().stream().filter(s -> s.getCode().equalsIgnoreCase("D8")).findFirst().orElse(null);
 
-        if (faculty.getSpecialties().isEmpty() || faculty.getDepartments().isEmpty()) {
-            System.out.println("Немає спеціальностей або кафедр.");
+        if (se == null || cs == null || marketing == null || history == null || lawSpec == null) {
+            System.out.println("Не знайдено потрібні спеціальності.");
             return;
         }
-
-        Specialty specialty = faculty.getSpecialties().get(0);
-        Department dept = faculty.getDepartments().get(0);
 
         service.addStudent(new Student(
                 UUID.randomUUID().toString(),
@@ -798,12 +825,12 @@ public class Main {
                 "0991234567",
                 "ST123",
                 2,
-                "IPZ-21",
+                "ІПЗ-21",
                 2023,
                 StudyForm.BUDGET,
                 StudentStatus.STUDYING,
-                dept,
-                specialty
+                getDepartmentBySpecialty(it, se),
+                se
         ));
 
         service.addStudent(new Student(
@@ -816,30 +843,66 @@ public class Main {
                 "0987654321",
                 "ST124",
                 3,
-                "IPZ-31",
+                "КН-31",
                 2022,
                 StudyForm.CONTRACT,
                 StudentStatus.STUDYING,
-                dept,
-                specialty
+                getDepartmentBySpecialty(it, cs),
+                cs
         ));
 
         service.addStudent(new Student(
                 UUID.randomUUID().toString(),
-                "Бондар",
-                "Дмитро",
-                "Ігорович",
-                LocalDate.of(2002, 11, 5),
-                "dmytro@test.com",
-                "0937778899",
+                "Сидоренко",
+                "Марія",
+                "Олегівна",
+                LocalDate.of(2005, 8, 21),
+                "maria@test.com",
+                "0971112233",
                 "ST125",
+                2,
+                "МН-21",
+                2023,
+                StudyForm.BUDGET,
+                StudentStatus.STUDYING,
+                getDepartmentBySpecialty(econ, marketing),
+                marketing
+        ));
+
+        service.addStudent(new Student(
+                UUID.randomUUID().toString(),
+                "Гнатюк",
+                "Андрій",
+                "Петрович",
+                LocalDate.of(2003, 2, 10),
+                "andriy@test.com",
+                "0962223344",
+                "ST126",
                 4,
-                "SE-41",
+                "ІСТ-41",
                 2021,
                 StudyForm.BUDGET,
-                StudentStatus.EXPELLED,
-                dept,
-                specialty
+                StudentStatus.STUDYING,
+                getDepartmentBySpecialty(hum, history),
+                history
+        ));
+
+        service.addStudent(new Student(
+                UUID.randomUUID().toString(),
+                "Шевченко",
+                "Леся",
+                "Петрівна",
+                LocalDate.of(2004, 7, 19),
+                "lesya@test.com",
+                "0955556677",
+                "ST127",
+                3,
+                "ПР-31",
+                2022,
+                StudyForm.CONTRACT,
+                StudentStatus.STUDYING,
+                getDepartmentBySpecialty(law, lawSpec),
+                lawSpec
         ));
 
         System.out.println("✔ Демо-дані додані!");
@@ -851,5 +914,10 @@ public class Main {
             return false;
         }
         return true;
+    }
+
+    private static void pause() {
+        System.out.println("\nНатисніть Enter, щоб повернутися в меню...");
+        scanner.nextLine();
     }
 }
